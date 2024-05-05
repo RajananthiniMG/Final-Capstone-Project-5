@@ -24,6 +24,9 @@ y = data["Loan_Status"]  # Target variable
 numeric_features = X.select_dtypes(include=["int64", "float64"]).columns
 categorical_features = X.select_dtypes(include=["object"]).columns
 
+# Add "Location" to categorical features
+categorical_features = categorical_features.append(pd.Index(["Location"]))
+
 numeric_transformer = Pipeline(steps=[
     ('imputer', SimpleImputer(strategy='median')),
     ('scaler', StandardScaler())
@@ -83,14 +86,18 @@ accuracy_overall = accuracy_score(y, y_pred_overall)
 # Display overall accuracy in Streamlit
 st.write("Overall Accuracy:", accuracy_overall)
 
-# Sidebar widget to select Employment_Status for filtering
-st.sidebar.title("Filter by Employment Status")
+# Sidebar widget to select Employment_Status and Location for filtering
+st.sidebar.title("Filter by Employment Status and Location")
 selected_status = st.sidebar.selectbox("Select Employment Status:", ["All"] + list(map(str, data["Employment_Status"].unique())))
+selected_location = st.sidebar.selectbox("Select Location:", ["All"] + list(map(str, data["Location"].unique())))
 
-# Filter data based on selected Employment_Status (if not "All")
+# Filter data based on selected Employment_Status and Location (if not "All")
 if selected_status != "All":
     filtered_data = data[data["Employment_Status"] == selected_status]
-    st.title(f"Loan Default Risk Prediction for Employment Status: {selected_status}")
+    if selected_location != "All":
+        filtered_data = filtered_data[filtered_data["Location"] == selected_location]
+
+    st.title(f"Loan Default Risk Prediction for Employment Status: {selected_status}, Location: {selected_location if selected_location != 'All' else 'All'}")
 
     if not filtered_data.empty:
         # Split features and target variable for filtered data
@@ -108,10 +115,10 @@ if selected_status != "All":
         accuracy_filtered = accuracy_score(y_filtered, y_pred_filtered)
 
         # Display accuracy for filtered data in Streamlit
-        st.write("Accuracy for Employment Status:", accuracy_filtered)
+        st.write("Accuracy for Employment Status and Location:", accuracy_filtered)
     else:
-        st.write("No data available for the selected Employment Status.")
+        st.write("No data available for the selected Employment Status and Location.")
 
 else:
     st.title("Loan Default Risk Prediction")
-    st.write("Select an employment status from the sidebar to see the accuracy for that group.")
+    st.write("Select an employment status and location from the sidebar to see the accuracy for that group.")
