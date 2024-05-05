@@ -1,16 +1,14 @@
+
 # Final-Capstone-Project-5
-
 # Loan Default Risk Prediction Streamlit App
-
 This Streamlit web application predicts loan default risk based on a dataset provided by the user. It includes the following features:
 
 - Loading and preprocessing of data
 - Training a logistic regression model
 - Evaluating the model's accuracy and generating a classification report
-- Filtering data by employment status and displaying accuracy for each group
+- Filtering data by employment status and location, and displaying accuracy for each group
 
 ## Requirements
-
 To run this application, you need the following dependencies:
 
 - Python 3.x
@@ -18,7 +16,6 @@ To run this application, you need the following dependencies:
 - Pandas
 - NumPy
 - Scikit-learn
-
 
 ## Input Data
 The input data should be in CSV format and include the following columns:
@@ -41,4 +38,4 @@ The app displays the following information:
 
 - Overall Accuracy: Accuracy of the model on the entire dataset
 - Classification Report: Detailed classification report including precision, recall, and F1-score
-- Filtered Accuracy: Accuracy of the model for a specific employment status, selectable via the sidebar
+- Filtered Accuracy: Accuracy of the model for a specific employment status and location, selectable via the sidebar
