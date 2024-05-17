@@ -12,7 +12,7 @@ from sklearn.pipeline import Pipeline
 # Load the data
 @st.cache_data
 def load_data():
-    return pd.read_csv(r"C:\Users\rajan\OneDrive\Desktop\Final Project\loan_default_prediction_project.csv")  # Replace with your dataset filename
+    return pd.read_csv(r"C:\Users\rajan\OneDrive\Desktop\Final Project\loan_default_prediction_project.csv")
 
 data = load_data()
 
