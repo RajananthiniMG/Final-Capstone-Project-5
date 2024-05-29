@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, classification_report
@@ -8,6 +7,19 @@ from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.impute import SimpleImputer
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
+import plotly.express as px
+
+# Set page configuration
+st.set_page_config(
+    page_title="Loan Default Risk Prediction App",
+    page_icon="📊",
+    layout="wide",
+    menu_items={
+        'Get Help': 'https://www.extremelycoolapp.com/help',
+        'Report a bug': 'https://www.extremelycoolapp.com/bug',
+        'About': '# Welcome to the Loan Default Risk Prediction App! This app predicts the risk of loan default based on various features.'
+    }
+)
 
 # Load the data
 @st.cache_data
@@ -15,6 +27,12 @@ def load_data():
     return pd.read_csv(r"C:\Users\rajan\OneDrive\Desktop\Final Project\loan_default_prediction_project.csv")
 
 data = load_data()
+
+# Replace missing values in 'Gender' column with the mode
+data['Gender'].fillna(data['Gender'].mode()[0], inplace=True)
+
+# Replace missing values in 'Employment_Status' column with the mode
+data['Employment_Status'].fillna(data['Employment_Status'].mode()[0], inplace=True)
 
 # Split features and target variable
 X = data.drop(columns=["Loan_Status"])  # Features
@@ -27,15 +45,9 @@ categorical_features = X.select_dtypes(include=["object"]).columns
 # Add "Location" to categorical features
 categorical_features = categorical_features.append(pd.Index(["Location"]))
 
-numeric_transformer = Pipeline(steps=[
-    ('imputer', SimpleImputer(strategy='median')),
-    ('scaler', StandardScaler())
-])
+numeric_transformer = Pipeline(steps=[('scaler', StandardScaler())])
 
-categorical_transformer = Pipeline(steps=[
-    ('imputer', SimpleImputer(strategy='constant', fill_value='missing')),
-    ('onehot', OneHotEncoder(handle_unknown='ignore'))
-])
+categorical_transformer = Pipeline(steps=[('onehot', OneHotEncoder(handle_unknown='ignore'))])
 
 # Combine preprocessing steps
 preprocessor = ColumnTransformer(
@@ -118,7 +130,39 @@ if selected_status != "All":
         st.write("Accuracy for Employment Status and Location:", accuracy_filtered)
     else:
         st.write("No data available for the selected Employment Status and Location.")
-
 else:
     st.title("Loan Default Risk Prediction")
-    st.write("Select an employment status and location from the sidebar to see the accuracy for that group.")
+    st.write("Select an employment status and location from the sidebar to see the accuracy for that group.", accuracy_overall)
+
+col1, col2 = st.columns(2)
+with col1:
+    # Plot accuracy for different Employment Status and Location
+    accuracy_dict = {}
+    for status in data["Employment_Status"].unique():
+        for location in data["Location"].unique():
+            filtered_data = data[(data["Employment_Status"] == status) & (data["Location"] == location)]
+            if not filtered_data.empty:
+                X_filtered = filtered_data.drop(columns=["Loan_Status"])  # Features
+                y_filtered = filtered_data["Loan_Status"]  # Target variable
+                X_filtered_encoded = preprocessing_pipeline.transform(X_filtered)
+                y_pred_filtered = model.predict(X_filtered_encoded)
+                accuracy_filtered = accuracy_score(y_filtered, y_pred_filtered)
+                accuracy_dict[(status, location)] = accuracy_filtered
+
+    # Create DataFrame from accuracy dictionary
+    accuracy_df = pd.DataFrame(list(accuracy_dict.items()), columns=['Status_Location', 'Accuracy'])
+    accuracy_df[['Employment_Status', 'Location']] = pd.DataFrame(accuracy_df['Status_Location'].tolist(), index=accuracy_df.index)
+    accuracy_df.drop(columns=['Status_Location'], inplace=True)
+
+    # Plot accuracy for different Employment Status and Location using Plotly
+    st.write("Accuracy for Different Employment Statuses and Locations:")
+    fig = px.pie(accuracy_df, values='Accuracy', names=accuracy_df['Employment_Status'] + ' - ' + accuracy_df['Location'])
+    st.plotly_chart(fig)
+
+with col2:
+
+    # Display a bar chart to describe loan status for each employment status
+    st.write("Loan Status for Each Employment Status:")
+    employment_status_counts = data.groupby('Employment_Status')['Loan_Status'].value_counts().unstack().fillna(0)
+    fig3 = px.bar(employment_status_counts, x=employment_status_counts.index, y=employment_status_counts.columns, labels={'x':'Employment Status', 'y':'Count'}, barmode='group')
+    st.plotly_chart(fig3)
